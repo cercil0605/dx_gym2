@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>体育館予約システム</title>
+    <style>
+        .booked {
+            background-color: #FFCCCC;
+        }
+        .popup {
+            position: absolute;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>体育館予約システム</h1>
+    <h2>予約可能週</h2>
+    <p>次の予約可能週： {{ start_of_week }} から {{ end_of_week }}</p>
+
+    <h2>予約フォーム</h2>
+    <form action="/reserve" method="post">
+        <label for="date">予約したい日付：</label>
+        <input type="date" id="date" name="date" value="{{ reserved_date }}" min="{{ start_of_week }}" max="{{ end_of_week }}">
+        <label for="time">予約したい時間帯：</label>
+        <select id="time" name="time">
+            {% for time in available_times %}
+                {% if time in booked_times %}
+                    <option value="{{ time }}" disabled>{{ time }}（予約済み）</option>
+                {% else %}
+                    <option value="{{ time }}">{{ time }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <button type="submit">予約する</button>
+    </form>
+
+    <div id="popup" class="popup">
+        <p>選択された時間帯は既に予約されています。別の時間帯を選択してください。</p>
+    </div>
+
+    <h2>予約可能時間帯</h2>
+    <ul>
+        {% for time in available_times %}
+            <li>{{ time }}
+                {% if time in booked_times %}
+                    <span class="booked">（予約済み）</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var dateInput = document.getElementById('date');
+            var timeSelect = document.getElementById('time');
+            var popup = document.getElementById('popup');
+
+            // 初期表示時に予約状況を取得して表示する
+            updateBookedTimes();
+
+            dateInput.addEventListener('change', function() {
+                var selectedDate = dateInput.value;
+                // 日付が変更されたらredirect
+                window.location.href = `/?date=${selectedDate}`;
+            });
+
+            timeSelect.addEventListener('change', function() {
+                if (this.querySelector(':checked').disabled) {
+                    popup.style.display = 'block';
+                } else {
+                    popup.style.display = 'none';
+                }
+            });
+
+            function updateBookedTimes() {
+                var selectedDate = dateInput.value;
+                fetch(`/api/get_reservations?date=${selectedDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('予約済みデータ:', data);  // デバッグ用
+                    var bookedTimes = data;
+                    // すべての選択肢をリセット
+                    Array.from(timeSelect.options).forEach(option => {
+                        option.disabled = false;
+                    });
+                    // 予約済み時間帯を無効化
+                    bookedTimes.forEach(bookedTime => {
+                        var option = timeSelect.querySelector(`option[value="${bookedTime}"]`);
+                        if (option) {
+                            option.disabled = true;
+                        }
+                    });
+                })
+                .catch(error => console.error('エラー:', error));
+            }
+
+        });
+    </script>
+</body>
+</html>
