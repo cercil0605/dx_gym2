@@ -1,6 +1,6 @@
-from . import reservations
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Blueprint
-
+from flask_login import login_required, current_user
+from . import reservations
 from .reservations import get_booked_times, add_booking
 
 main = Blueprint('main', __name__)
@@ -37,3 +37,8 @@ def reserve(): # process reservations
         return redirect(url_for('main.main_page', date=reserved_date))
     else:
         return "その時間帯は既に予約されています。別の時間帯を選択してください。"
+
+@main.route('/admin')
+@login_required
+def admin():
+    return render_template('admin.html',name=current_user.name)
