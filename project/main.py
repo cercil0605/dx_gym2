@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Blueprint, flash
 from flask_login import login_required, current_user
 from . import reservations
-from .reservations import get_booked_times, add_booking
+from .reservations import get_booked_times, add_booking, judge_student_id
 
 main = Blueprint('main', __name__)
 # define available time for reserve
@@ -32,11 +32,17 @@ def get_reserved_times(): # get reservations info
 def reserve(): # process reservations
     reserved_date = request.form['date']
     reserved_time = request.form['time']
+    student_id = request.form['student_id']
+
+    if not judge_student_id(student_id): # judge student id
+        flash("不正な学籍番号です。もう一度やり直してください")
+        return redirect(url_for('main.main_page',date=reserved_date)) # redirect same page
 
     if add_booking(reserved_date, reserved_time):
         return redirect(url_for('main.main_page', date=reserved_date))
     else:
-        return "その時間帯は既に予約されています。別の時間帯を選択してください。"
+        flash("予約済みの時間帯です。もう一度やり直してください")
+        return redirect(url_for('main.main_page'))
 
 @main.route('/admin')
 @login_required

@@ -4,19 +4,35 @@
 
 {% block content %}
 <h1 class="title has-text-centered">体育館予約システム</h1>
+    <!-- Flash メッセージの表示 -->
+{% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification is-danger">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
 <div class="box">
     <h2 class="subtitle">予約可能週</h2>
     <p>次の予約可能週：<strong>{{ start_of_week }}</strong> から <strong>{{ end_of_week }}</strong></p>
 
     <h2 class="subtitle">予約フォーム</h2>
     <form action="/reserve" method="post">
-        <div class="field">
-            <label class="label" for="date">予約したい日付：</label>
-            <div class="control">
+        <!-- フレックスコンテナ -->
+        <div class="field is-grouped">
+            <!-- 学籍番号 -->
+            <div class="control is-expanded">
+                <label class="label" for="student_id">学籍番号：</label>
+                <input class="input" type="text" id="student_id" name="student_id" placeholder="学籍番号を入力してください" required>
+            </div>
+            <!-- 日付 -->
+            <div class="control is-expanded">
+                <label class="label" for="date">予約したい日付：</label>
                 <input class="input" type="date" id="date" name="date" value="{{ reserved_date }}"
                        min="{{ start_of_week }}" max="{{ end_of_week }}">
             </div>
         </div>
+        <!-- 時間帯 -->
         <div class="field">
             <label class="label" for="time">予約したい時間帯：</label>
             <div class="control">
@@ -33,6 +49,7 @@
                 </div>
             </div>
         </div>
+        <!-- 送信ボタン -->
         <div class="control">
             <button class="button is-link" type="submit">予約する</button>
         </div>
@@ -43,10 +60,10 @@
     </div>
 
     <h2 class="subtitle">予約可能時間帯</h2>
-    <ul>
+    <ul class="time-list">
         {% for time in available_times %}
-        <li>
-            {{ time }}
+        <li class="time-item">
+            <span>{{ time }}</span>
             {% if time in booked_times %}
             <span class="tag is-danger">予約済み</span>
             {% endif %}
@@ -54,6 +71,28 @@
         {% endfor %}
     </ul>
 </div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .time-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .time-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5em 0;
+        border-bottom: 1px solid #ddd;
+    }
+    .time-item span {
+        font-size: 1em;
+    }
+    .time-item .tag {
+        font-size: 0.85em;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}

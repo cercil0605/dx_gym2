@@ -1,11 +1,13 @@
 from flask import Blueprint
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
+import re
 
 from . import db
 from .models import Reservation
 
 reservations = Blueprint('reservations', __name__)
+STUDENT_ID_PATTERN = re.compile(r'^\d{2}[a-zA-Z]\d{4}[a-zA-Z]$') # student id pattern
 
 # get reserved_time
 def get_booked_times(reserved_date):
@@ -45,3 +47,7 @@ def get_reservation_week():
     end_date = start_date + timedelta(days=6)
 
     return start_date.date(), end_date.date()
+
+# judge studentID
+def judge_student_id(student_id):
+    return bool(STUDENT_ID_PATTERN.match(student_id))
