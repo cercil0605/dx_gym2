@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Blueprint, flash
 from flask_login import login_required, current_user
-import os
 
 from . import reservations
 from .reservations import get_booked_times, add_booking, judge_student_id
@@ -9,9 +8,6 @@ from . import sendmail
 main = Blueprint('main', __name__)
 # define available time for reserve
 AVAILABLE_TIMES = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
-# mail address setup
-SEND_FROM ='support@cercil.net'
-UNIV_ADDRESS = '@shinshu-u.ac.jp'
 
 @main.route('/')
 def main_page(): # show main page(for reserve)
@@ -46,8 +42,7 @@ def reserve(): # process reservations
 
     # send reserve mail
     sendmail.send_email(
-        who=SEND_FROM,
-        to=student_id+UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
+        to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
         subject="体育館予約の確認",
         body="{} {}に予約をしようとしていますか？".format(reserved_date,reserved_time)
     )

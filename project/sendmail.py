@@ -18,6 +18,9 @@ CREDENTIALS_PATH = os.path.join(BASE_DIR, 'mail_authfile', 'credentials.json')
 TOKEN_PATH = os.path.join(BASE_DIR, 'mail_authfile', 'token.json')
 # gmailAPI scope
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+# mail address setup
+SEND_FROM ='support@cercil.net'
+UNIV_ADDRESS = '@shinshu-u.ac.jp'
 
 # generate(or load) credential to prepare the API
 def generate_credentials():
@@ -42,7 +45,7 @@ def generate_credentials():
     return credential_file
 
 # send email by using the API
-def send_email(who, to, subject, body):
+def send_email(to, subject, body):
     try:
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
         service = build('gmail', 'v1', credentials=creds)
@@ -50,7 +53,7 @@ def send_email(who, to, subject, body):
         # the api needs encoded mime mail message by base64url str
         message = MIMEText(body)
         message['to'] = to
-        message['from'] = who
+        message['from'] = SEND_FROM
         message['subject'] = subject
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
@@ -59,6 +62,6 @@ def send_email(who, to, subject, body):
             userId="me",
             body={'raw': raw}
         ).execute()
-        print("メールを送信しました！")
+        print("success(mail)")
     except Exception as error:
-        print(f"エラーが発生しました: {error}")
+        print(f"An error occurred(mail): {error}")
