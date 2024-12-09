@@ -1,0 +1,3 @@
+/instance/db.sqlite
+!/mail_authfile/credentials.json
+!/mail_authfile/token.json
