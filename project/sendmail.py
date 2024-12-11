@@ -4,7 +4,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 from flask import Blueprint
-import base64,os
+import base64,os,hashlib
 
 # send mail by using **Gmail API**
 
@@ -51,7 +51,7 @@ def send_email(to, subject, body):
         service = build('gmail', 'v1', credentials=creds)
 
         # the api needs encoded mime mail message by base64url str
-        message = MIMEText(body)
+        message = MIMEText(body,"html","utf-8")
         message['to'] = to
         message['from'] = SEND_FROM
         message['subject'] = subject
@@ -65,3 +65,24 @@ def send_email(to, subject, body):
         print("success(mail)")
     except Exception as error:
         print(f"An error occurred(mail): {error}")
+
+# hash student_id and add StudentInfo table
+def hash_student_id(student_id):
+    # 循環参照が起きてしまうので、ここで読み込む
+    from . import db
+    from .models import StudentInfo
+    # find existed student
+    student = StudentInfo.query.filter_by(student_id=student_id).first()
+    # existed, dont generate
+    if student:
+        print("student already exists")
+        return student.hashed_id
+    # prepare for new student
+    print("student not found, generating...")
+    hashed_id = hashlib.md5(student_id.encode()).hexdigest()
+    new_student = StudentInfo(student_id=student_id,hashed_id=hashed_id)
+
+    db.session.add(new_student)
+    db.session.commit()
+
+    return hashed_id
