@@ -33,7 +33,7 @@
                         <div class="navbar-end">
                             <a href="/" class="navbar-item">ホーム</a>
                             {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('main.admin') }}" class="navbar-item">プロフィール</a>
+                            <a href="{{ url_for('main.admin') }}" class="navbar-item">管理者</a>
                             <a href="{{ url_for('auth.logout') }}" class="navbar-item">ログアウト</a>
                             {% else %}
                             <a href="{{ url_for('auth.login') }}" class="navbar-item">ログイン</a>
