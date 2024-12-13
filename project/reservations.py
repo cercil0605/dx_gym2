@@ -25,7 +25,8 @@ def add_booking(reserved_date, reserved_time):
     # prepare reservation data
     new_reservation = Reservation(
         reserved_date=reserved_date,
-        reserved_time=reserved_time)
+        reserved_time=reserved_time
+    )
 
     try:
         # insert reservation
@@ -36,6 +37,21 @@ def add_booking(reserved_date, reserved_time):
         # failed
         db.session.rollback()
         # error message
+        print(f"Error: {e}")
+        return False
+
+# delete booking
+def delete_booking(reserved_date, reserved_time):
+    try:
+        # 予約を検索して削除
+        reservation = Reservation.query.filter_by(reserved_date=reserved_date, reserved_time=reserved_time).first()
+        if reservation:
+            db.session.delete(reservation)
+            db.session.commit()
+            return True
+        return False
+    except SQLAlchemyError as e:
+        db.session.rollback()
         print(f"Error: {e}")
         return False
 
