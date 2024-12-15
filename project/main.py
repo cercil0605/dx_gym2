@@ -45,7 +45,7 @@ def reserve(): # process reservations
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
         subject="体育館予約の確認",
-        body="""予約を確定させるために、<a href="127.0.0.1/confirm/{}/{}+{}">こちら</a>をクリックしてください。""".format(sendmail.hash_student_id(student_id=student_id),reserved_date,reserved_time)
+        body="""予約を確定させるために、<a href="cercil.net/confirm/{}/{}+{}">こちら</a>をクリックしてください。""".format(sendmail.hash_student_id(student_id=student_id),reserved_date,reserved_time)
     )
 
     flash("メールを送信しました。予約を確定してください")
