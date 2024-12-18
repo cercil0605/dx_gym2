@@ -22,6 +22,15 @@ def get_booked_times(reserved_date):
 
 # add reservation to db
 def add_booking(reserved_date, reserved_time):
+
+    existed_reservation = Reservation.query.filter_by(
+        reserved_date=reserved_date,
+        reserved_time=reserved_time
+    ).first()
+    # check reservation(already exists)
+    if existed_reservation:
+        return  False
+
     # prepare reservation data
     new_reservation = Reservation(
         reserved_date=reserved_date,
