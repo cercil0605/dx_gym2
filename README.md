@@ -14,14 +14,16 @@
 - Flask(Webフレームワーク）
 - SQLite3,SQLAlchemy(予約情報など）
 - HTML,JS,CSSなど（フロント）
-- nginx
-- uWSGI
+- nginx(Webサーバー）
+- uWSGI（ソケット）
+- GmailAPI（メール送信）
 - Cloudflare
 
 とシンプルかつ軽量な仕組みを意識して作っております。実際に大学で使ってもらえるように改善しながら進めております。
 
-[Imgur](https://i.imgur.com/iyR49RS.png)
-構成図は↑のとおりです。
+![構成](https://i.imgur.com/iyR49RS.png)
+
+上の図のように構成しております。
 
 # branchについて
 mainブランチではノートPC上での開発したものを上げてあります。raspberrypiブランチでは実際に、Sampleで公開できるように少しだけ書き換えたものを上げてあります。
