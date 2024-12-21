@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import re
 
 from . import db
-from .models import Reservation
+from .models import Reservation,Request
 
 reservations = Blueprint('reservations', __name__)
 STUDENT_ID_PATTERN = re.compile(r'^\d{2}[a-zA-Z]\d{4}[a-zA-Z]$') # student id pattern
@@ -61,6 +61,35 @@ def delete_booking(reserved_date, reserved_time):
         return False
     except SQLAlchemyError as e:
         db.session.rollback()
+        print(f"Error: {e}")
+        return False
+
+# add db for request reservation
+def request_booking(reserved_date, reserved_time,student_id):
+    # same request ?
+    existed_request = Request.query.filter_by(
+        reserved_date=reserved_date,
+        reserved_time=reserved_time,
+        student_id=student_id
+    )
+    # decline
+    if existed_request:
+        return False
+
+    new_request = Request(
+        reserved_date=reserved_date,
+        reserved_time=reserved_time,
+        student_id=student_id
+    )
+    try:
+        # insert request
+        db.session.add(new_request)
+        db.session.commit()
+        return True
+    except SQLAlchemyError as e:
+        # failed
+        db.session.rollback()
+        # error message
         print(f"Error: {e}")
         return False
 

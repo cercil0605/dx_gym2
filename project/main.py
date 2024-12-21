@@ -3,12 +3,14 @@ from flask_login import login_required, current_user
 
 from . import reservations
 from .models import StudentInfo, Reservation
-from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking
+from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking, request_booking
 from . import sendmail
 
 main = Blueprint('main', __name__)
 # define available time for reserve
 AVAILABLE_TIMES = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']
+# send address (for test use 127.---)
+SEND_ADDRESS = "127.0.0.1"
 
 @main.route('/')
 def main_page(): # show main page(for reserve)
@@ -45,10 +47,10 @@ def reserve(): # process reservations
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
         subject="体育館予約の確認",
-        body="""予約を確定させるために、<a href="127.0.0.1/confirm/{}/{}+{}">こちら</a>をクリックしてください。""".format(sendmail.hash_student_id(student_id=student_id),reserved_date,reserved_time)
+        body="""予約申請を完了させるために、<a href="{}/confirm/{}/{}+{}">こちら</a>をクリックしてください。""".format(SEND_ADDRESS,sendmail.hash_student_id(student_id=student_id),reserved_date,reserved_time)
     )
 
-    flash("メールを送信しました。予約を確定してください")
+    flash("メールを送信しました。予約申請を確定してください")
     return redirect(url_for('main.main_page', date=reserved_date))  # redirect same page
 
 # for admin
@@ -82,11 +84,11 @@ def admin_delete_reservation():
 def confirm(hash_id,reserved_date,reserved_time):
     reserve_student = StudentInfo.query.filter_by(hashed_id=hash_id).first()
     if reserve_student:
-        if add_booking(reserved_date,reserved_time): # first access, add date,time,student_id
-            return "予約が完了しました。この画面は閉じて構いません。"
+        if request_booking(reserved_date=reserved_date,reserved_time=reserved_time,student_id=reserve_student.student_id):# first access, add date,time,student_id
+            return "予約申請が完了しました。この画面は閉じて構いません。"
         else: # second access or if the time was already reserved
-            return "予約完了済みです。"
+            return "予約申請が完了済みです。"
 
     else: # block unauthorized access
-        return "存在しない予約です。"
+        return "存在しない予約申請です。"
 
