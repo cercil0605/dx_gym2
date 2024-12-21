@@ -1,6 +1,9 @@
 from flask import Blueprint
 from datetime import datetime, timedelta
+
+from flask_sqlalchemy.model import Model
 from sqlalchemy.exc import SQLAlchemyError
+from typing import Type
 import re
 
 from . import db
@@ -21,7 +24,7 @@ def get_booked_times(reserved_date):
     return booked_times
 
 # add reservation to db
-def add_booking(reserved_date, reserved_time):
+def add_booking(reserved_date, reserved_time,reserver_id):
 
     existed_reservation = Reservation.query.filter_by(
         reserved_date=reserved_date,
@@ -31,10 +34,11 @@ def add_booking(reserved_date, reserved_time):
     if existed_reservation:
         return  False
 
-    # prepare reservation data
+    # prepare reservation data  *****Reservation table needs date,time,reserver_id(ex student_id or admin)*****
     new_reservation = Reservation(
         reserved_date=reserved_date,
-        reserved_time=reserved_time
+        reserved_time=reserved_time,
+        reserver_id=reserver_id
     )
 
     try:
@@ -65,15 +69,9 @@ def delete_booking(reserved_date, reserved_time):
         return False
 
 # add db for request reservation
-def request_booking(reserved_date, reserved_time,student_id):
+def add_request_booking(reserved_date, reserved_time,student_id):
     # same request ?
-    existed_request = Request.query.filter_by(
-        reserved_date=reserved_date,
-        reserved_time=reserved_time,
-        student_id=student_id
-    )
-    # decline
-    if existed_request:
+    if check_duplicate(Request,reserved_date=reserved_date,reserved_time=reserved_time,student_id=student_id):
         return False
 
     new_request = Request(
@@ -93,6 +91,22 @@ def request_booking(reserved_date, reserved_time,student_id):
         print(f"Error: {e}")
         return False
 
+# delete data from Request DB
+def delete_request_booking(request_id):
+    try:
+        # find request by using id(UNIQUE)
+        requests = Request.query.filter_by(id=request_id).first()
+        if requests:
+            db.session.delete(requests)
+            db.session.commit()
+            return True
+        return False
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"Error: {e}")
+        return False
+
+
 # get available reservation day(start~end)
 def get_reservation_week():
     # get date
@@ -105,3 +119,7 @@ def get_reservation_week():
 # judge studentID
 def judge_student_id(student_id):
     return bool(STUDENT_ID_PATTERN.match(student_id))
+
+def check_duplicate(table_class: Type[Model], **filters) -> bool:
+    duplicate = table_class.query.filter_by(**filters).first()
+    return duplicate is not None # if it exists return True

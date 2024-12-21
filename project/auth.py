@@ -32,13 +32,13 @@ def login():
 
         # passed
         login_user(user, remember=remember)
-        return redirect(url_for('main.admin'))
+        return redirect(url_for('main.admin_confirm'))
 
     return render_template('login.html')
 
 
 @auth.route('/signup',methods=['GET','POST'])
-@login_required
+# @login_required
 def signup():
     if request.method == 'POST':
         # get val from DB and typed

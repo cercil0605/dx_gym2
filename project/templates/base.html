@@ -24,15 +24,10 @@
         <div class="hero-head">
             <nav class="navbar">
                 <div class="container">
-                    <div class="navbar-brand">
-                        <a class="navbar-item" href="/">
-                            体育館予約システム
-                        </a>
-                    </div>
                     <div id="navbarMenu" class="navbar-menu">
                         <div class="navbar-end">
                             {% if current_user.is_authenticated %}
-                            <a href="/" class="navbar-item">ホーム（管理者）</a>
+                            <a href="{{ url_for('main.admin_confirm') }}" class="navbar-item">リクエスト管理</a>
                             <a href="{{ url_for('main.admin') }}" class="navbar-item">予約管理</a>
                             <a href="{{ url_for('auth.logout') }}" class="navbar-item">ログアウト</a>
                             <a href="{{ url_for('auth.signup') }}" class="navbar-item">新規管理者登録</a>
