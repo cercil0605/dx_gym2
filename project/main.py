@@ -83,6 +83,7 @@ def admin_delete_reservation():
 @main.route('/confirm/<string:hash_id>/<string:reserved_date>+<string:reserved_time>')
 def confirm(hash_id,reserved_date,reserved_time):
     reserve_student = StudentInfo.query.filter_by(hashed_id=hash_id).first()
+    # print(reserve_student.student_id)
     if reserve_student:
         if request_booking(reserved_date=reserved_date,reserved_time=reserved_time,student_id=reserve_student.student_id):# first access, add date,time,student_id
             return "予約申請が完了しました。この画面は閉じて構いません。"
