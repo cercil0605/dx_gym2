@@ -43,7 +43,6 @@ def reserve(): # process reservations
         flash("不正な学籍番号です。もう一度やり直してください")
         return redirect(url_for('main.main_page',date=reserved_date)) # redirect same page
 
-
     # send reserve mail なぜか :5000をつけるとリンク埋めができない
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
@@ -63,22 +62,24 @@ def student_approve_reservation():
     requests = Request.query.filter_by(id=request_id).first()
     # add booking
     if add_booking(reserved_date=requests.reserved_date, reserved_time=requests.reserved_time,reserver_id=requests.student_id):
-        # send reserve mail なぜか :5000をつけるとリンク埋めができない
-        sendmail.send_email(
-            to=requests.student_id + sendmail.UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
-            subject="体育館予約確定のお知らせ",
-            body="""{} {}の予約が確定しました。""".format(requests.reserved_date,requests.reserved_time)
-        )
-        # delete data from requestDB
-        delete_request_booking(request_id=request_id)
-
-        flash("予約確定しました")
+        # delete data from requestDB to disappear the request
+        delete_request_booking(request_id=request_id,condition=True)
         return redirect(url_for('main.admin_confirm'))
     else:
         flash("予約確定失敗")
         return redirect(url_for('main.admin_confirm'))
 
-
+#reject booking(for student)
+@main.route('/reject', methods=['POST'])
+def student_reject_reservation():
+    # get request data
+    request_id = request.form['request_id']
+    # delete
+    if delete_request_booking(request_id=request_id,condition=False):
+        return redirect(url_for('main.admin_confirm'))
+    else:
+        flash("予約削除に失敗しました")
+        return redirect(url_for('main.admin_confirm'))
 
 
 # for admin
