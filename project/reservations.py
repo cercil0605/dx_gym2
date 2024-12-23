@@ -20,22 +20,23 @@ UNIV_ADDRESS = '@shinshu-u.ac.jp'
 def get_booked_times(reserved_date):
     # find reserved data
     reserve = Reservation.query.filter_by(reserved_date=reserved_date).all()
-    # push booked time data in reserved_date to booked_times
+    # push booked time in booked_times
     booked_times = []
     for r in reserve:
-        booked_times.append(r.reserved_time)
+        booked_times.extend(generate_time_intervals(r.start_time, r.end_time))
 
     return booked_times
 
 # add reservation to db
-def add_booking(reserved_date, reserved_time,reserver_id):
+def add_booking(reserved_date,start_time,end_time,reserver_id):
 
-    if check_duplicate(Reservation,reserved_date=reserved_date,reserved_time=reserved_time,reserver_id=reserver_id):
+    if check_duplicate(Reservation,reserved_date=reserved_date,start_time=start_time,end_time=end_time,reserver_id=reserver_id):
         return False
     # prepare reservation data  *****Reservation table needs date,time,reserver_id(ex student_id or admin)*****
     new_reservation = Reservation(
         reserved_date=reserved_date,
-        reserved_time=reserved_time,
+        start_time=start_time,
+        end_time=end_time,
         reserver_id=reserver_id
     )
     try:
@@ -46,7 +47,7 @@ def add_booking(reserved_date, reserved_time,reserver_id):
         send_email(
             to=reserver_id + UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
             subject="体育館予約確定のお知らせ",
-            body="""{} {}の予約が確定しました。""".format(reserved_date, reserved_time)
+            body="""{} {} - {}の予約が確定しました。""".format(reserved_date, start_time, end_time)
         )
         return True
     except SQLAlchemyError as e:
@@ -57,10 +58,10 @@ def add_booking(reserved_date, reserved_time,reserver_id):
         return False
 
 # delete booking
-def delete_booking(reserved_date, reserved_time):
+def delete_booking(reserved_date, start_time):
     try:
         # 予約を検索して削除
-        reservation = Reservation.query.filter_by(reserved_date=reserved_date, reserved_time=reserved_time).first()
+        reservation = Reservation.query.filter_by(reserved_date=reserved_date, start_time=start_time).first()
         if reservation:
             db.session.delete(reservation)
             db.session.commit()
@@ -72,14 +73,15 @@ def delete_booking(reserved_date, reserved_time):
         return False
 
 # add db for request reservation
-def add_request_booking(reserved_date, reserved_time,student_id):
+def add_request_booking(reserved_date,start_time,end_time,student_id):
     # same request ?
-    if check_duplicate(Request,reserved_date=reserved_date,reserved_time=reserved_time,student_id=student_id):
+    if check_duplicate(Request,reserved_date=reserved_date,start_time=start_time,end_time=end_time,student_id=student_id):
         return False
 
     new_request = Request(
         reserved_date=reserved_date,
-        reserved_time=reserved_time,
+        start_time=start_time,
+        end_time=end_time,
         student_id=student_id
     )
     try:
@@ -108,7 +110,7 @@ def delete_request_booking(request_id,condition):
                 send_email(
                     to=requests.student_id+ UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
                     subject="体育館予約申請の削除について",
-                    body="""{} {}の予約が管理者によって削除されました。""".format(requests.reserved_date, requests.reserved_time)
+                    body="""{} {} - {}の予約が管理者によって削除されました。""".format(requests.reserved_date, requests.start_time, requests.end_time)
                 )
 
         return True
@@ -135,3 +137,17 @@ def judge_student_id(student_id):
 def check_duplicate(table_class: Type[Model], **filters) -> bool:
     duplicate = table_class.query.filter_by(**filters).first()
     return duplicate is not None # if it exists return True
+
+# generate time ex) start=10:00,end=12:00 -> return [10:00,10:30,11:00,11:30]
+def generate_time_intervals(start: str, end: str):
+    start_time = datetime.strptime(start, "%H:%M")
+    end_time = datetime.strptime(end, "%H:%M")
+
+    time_list = []
+    current_time = start_time
+
+    while current_time < end_time:  # exclude end_time
+        time_list.append(current_time.strftime("%H:%M"))
+        current_time += timedelta(minutes=30)  # add 30min
+
+    return time_list

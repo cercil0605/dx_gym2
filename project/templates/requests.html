@@ -28,7 +28,7 @@
                 <tr>
                     <td>{{ request.student_id }}</td>
                     <td>{{ request.reserved_date }}</td>
-                    <td>{{ request.reserved_time }}</td>
+                    <td>{{ request.start_time }} - {{ request.end_time }}</td>
                     <td>
                         <form action="{{ url_for('main.student_approve_reservation') }}" method="POST" style="display:inline;">
                             <input type="hidden" name="request_id" value="{{ request.id }}">
