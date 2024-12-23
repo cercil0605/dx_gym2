@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 
 from . import reservations
 from .models import StudentInfo, Reservation, Request
-from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking, add_request_booking,delete_request_booking
+from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking, add_request_booking,delete_request_booking,check_reservation_time
 from . import sendmail
 
 main = Blueprint('main', __name__)
@@ -45,12 +45,11 @@ def reserve(): # process reservations
     start_time = request.form['start_time']
     end_time = request.form['end_time']
     student_id = request.form['student_id']
+    # judge start_time and end_time are correct or not
+    if not check_reservation_time(start_time, end_time, reserved_date):
+        return redirect(url_for('main.main_page'))
 
-    if not judge_student_id(student_id): # judge student id
-        flash("不正な学籍番号です。もう一度やり直してください")
-        return redirect(url_for('main.main_page',date=reserved_date)) # redirect same page
-
-    # send reserve mail なぜか :5000をつけるとリンク埋めができない
+    # send reserve mail
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
         subject="体育館予約の確認",
@@ -62,9 +61,9 @@ def reserve(): # process reservations
                 end_time
                 )
     )
+    return redirect(url_for('main.main_page'))
 
-    flash("メールを送信しました。予約申請を確定してください")
-    return redirect(url_for('main.main_page', date=reserved_date))  # redirect same page
+
 
 # confirm reservation
 @main.route('/confirm/<string:hash_id>/<string:reserved_date>+<string:start_time>-<string:end_time>')

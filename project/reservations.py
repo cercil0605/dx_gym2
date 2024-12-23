@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint,flash
 from datetime import datetime, timedelta
 
 from flask_sqlalchemy.model import Model
@@ -151,3 +151,17 @@ def generate_time_intervals(start: str, end: str):
         current_time += timedelta(minutes=30)  # add 30min
 
     return time_list
+
+def check_reservation_time(start_time: str, end_time: str,date):
+    start_time = datetime.strptime(start_time, "%H:%M")
+    end_time = datetime.strptime(end_time, "%H:%M")
+    if start_time > end_time:
+        flash("開始時間が終了時間より遅いです。もう一度やり直してください")
+        return False
+
+    if start_time == end_time:
+        flash ("開始時間と終了時間が一致しています。もう一度やり直してください")
+        return False
+
+    flash("メールを送信しました。予約申請を確定してください")
+    return True
