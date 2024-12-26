@@ -43,6 +43,8 @@ def add_booking(reserved_date,start_time,end_time,reserver_id):
     # block double booking
     if check_duplicate(Reservation,reserved_date=reserved_date,start_time=start_time,end_time=end_time,reserver_id=reserver_id):
         return False
+    if check_duplicate_detail(reserved_date=reserved_date,start_time=start_time,end_time=end_time):
+        return False
     # prepare reservation data  *****Reservation table needs date,time,reserver_id(ex student_id or admin)*****
     new_reservation = Reservation(
         reserved_date=reserved_date,
@@ -158,6 +160,18 @@ def check_duplicate(table_class: Type[Model], **filters) -> bool:
     duplicate = table_class.query.filter_by(**filters).first()
     return duplicate is not None # if it exists return True
 
+def check_duplicate_detail(reserved_date,start_time,end_time):
+    new_reservation = generate_time_intervals(start_time,end_time)
+    existed_reservation = get_booked_times(reserved_date)
+
+    print("new_reservation", new_reservation)
+    print("existed_reservation", existed_reservation)
+
+    for elements in new_reservation:
+        if elements in existed_reservation:
+            return True
+
+    return False
 # generate time ex) start=10:00,end=12:00 -> return [10:00,10:30,11:00,11:30]
 def generate_time_intervals(start: str, end: str):
     start_time = datetime.strptime(start, "%H:%M")
@@ -171,7 +185,7 @@ def generate_time_intervals(start: str, end: str):
         current_time += timedelta(minutes=30)  # add 30min
 
     return time_list
-
+# check duplication of reservation time
 def check_reservation_time(start_time: str, end_time: str,date):
     start_time = datetime.strptime(start_time, "%H:%M")
     end_time = datetime.strptime(end_time, "%H:%M")

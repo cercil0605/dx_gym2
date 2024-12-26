@@ -44,7 +44,7 @@ def get_reserved_times(): # get reservations info
 def get_reservations_detail():
     date = request.args.get('date')
     reserved_data = get_booked_times_details(date)
-    print(reserved_data)
+    # print(reserved_data)
     return jsonify(reserved_data)
 
 
@@ -63,8 +63,12 @@ def reserve(): # process reservations
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
         subject="体育館予約の確認",
-        body="""予約申請を完了させるために、<a href="{}/confirm/{}/{}+{}-{}">こちら</a>をクリックしてください。"""
-        .format(SEND_ADDRESS,
+        body="""{} {} - {} の予約申請を完了させるために、<a href="{}/confirm/{}/{}+{}-{}">こちら</a>をクリックしてください。"""
+        .format(
+            reserved_date,
+                start_time,
+                end_time,
+                SEND_ADDRESS,
                 sendmail.hash_student_id(student_id=student_id),
                 reserved_date,
                 start_time,
