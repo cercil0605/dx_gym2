@@ -27,9 +27,20 @@ def get_booked_times(reserved_date):
 
     return booked_times
 
+# get reserved_time for admin
+def get_booked_times_details(reserved_date):
+    reserve = Reservation.query.filter_by(reserved_date=reserved_date).all()
+    booked_times = []
+    for r in reserve: # insert like [ [10:00,10:30,11:00,11:30], 21t***** ]
+        booked_times.append(generate_time_intervals(r.start_time, r.end_time))
+        booked_times.append(r.reserver_id)
+
+    return booked_times
+
 # add reservation to db
 def add_booking(reserved_date,start_time,end_time,reserver_id):
 
+    # block double booking
     if check_duplicate(Reservation,reserved_date=reserved_date,start_time=start_time,end_time=end_time,reserver_id=reserver_id):
         return False
     # prepare reservation data  *****Reservation table needs date,time,reserver_id(ex student_id or admin)*****
@@ -43,12 +54,13 @@ def add_booking(reserved_date,start_time,end_time,reserver_id):
         # insert reservation
         db.session.add(new_reservation)
         db.session.commit()
-        # send reserve mail
-        send_email(
-            to=reserver_id + UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
-            subject="体育館予約確定のお知らせ",
-            body="""{} {} - {}の予約が確定しました。""".format(reserved_date, start_time, end_time)
-        )
+        if reserver_id != "admin":
+            # send reserve mail
+            send_email(
+                to=reserver_id + UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
+                subject="体育館予約確定のお知らせ",
+                body="""{} {} - {}の予約が確定しました。""".format(reserved_date, start_time, end_time)
+            )
         return True
     except SQLAlchemyError as e:
         # failed
@@ -65,6 +77,14 @@ def delete_booking(reserved_date, start_time):
         if reservation:
             db.session.delete(reservation)
             db.session.commit()
+            if reservation.reserver_id != "admin":
+                send_email(
+                    to=reservation.reserver_id + UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
+                    subject="体育館予約申請の削除について",
+                    body="""{} {} - {}の予約が管理者によって削除されました。""".format(reservation.reserved_date,
+                                                                                      reservation.start_time,
+                                                                                      reservation.end_time)
+                )
             return True
         return False
     except SQLAlchemyError as e:
@@ -110,7 +130,7 @@ def delete_request_booking(request_id,condition):
                 send_email(
                     to=requests.student_id+ UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
                     subject="体育館予約申請の削除について",
-                    body="""{} {} - {}の予約が管理者によって削除されました。""".format(requests.reserved_date, requests.start_time, requests.end_time)
+                    body="""{} {} - {}の予約申請が管理者によって削除されました。""".format(requests.reserved_date, requests.start_time, requests.end_time)
                 )
 
         return True

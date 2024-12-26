@@ -5,11 +5,11 @@ from flask_login import login_required, current_user
 
 from . import reservations
 from .models import StudentInfo, Reservation, Request
-from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking, add_request_booking,delete_request_booking,check_reservation_time
+from .reservations import get_booked_times, add_booking, judge_student_id, delete_booking, add_request_booking,delete_request_booking,check_reservation_time,get_booked_times_details
 from . import sendmail
 
 main = Blueprint('main', __name__)
-# define available time for reserve   8:00 - 18:00
+# define available time for reserve   8:00 - 18:30
 AVAILABLE_TIMES = [
     datetime.time(hour, minute).strftime('%H:%M')
     for hour in range(8, 19)  # Change to 19 to include 18:00
@@ -38,6 +38,16 @@ def get_reserved_times(): # get reservations info
     reserved_date = request.args.get('date')
     booked_times = get_booked_times(reserved_date) # find reserved time in 'date'(ex 2024-12-01)
     return jsonify(booked_times) # return json pattern
+
+# for admin, show reserved_time and reserver
+@main.route('/api/get_reservations_detail',methods=['POST'])
+def get_reservations_detail():
+    date = request.args.get('date')
+    reserved_data = get_booked_times_details(date)
+    print(reserved_data)
+    return jsonify(reserved_data)
+
+
 
 @main.route('/reserve',methods=['POST'])
 def reserve(): # process reservations
@@ -86,7 +96,7 @@ def admin_confirm():
     requests = Request.query.all()
     return render_template('requests.html',requests=requests)
 
-# add booking(for student)
+# add booking(for student)　　　****必要改善****
 @main.route('/approve', methods=['POST'])
 def student_approve_reservation():
     # get request data
@@ -123,20 +133,30 @@ def admin():
 # add booking (for admin)
 @main.route('/admin/reserve', methods=['POST'])
 def admin_reserve():
-    data = request.get_json()
-    reserved_date = data.get('date')
-    reserved_time = data.get('time')
-    if add_booking(reserved_date=reserved_date,reserved_time=reserved_time,reserver_id='admin'):
-        return jsonify({'success': True, 'message': '予約が追加されました'}), 200
+    # the span of reservation of admin is 30 min
+    try :
+        data = request.get_json()
+        reserved_date = data.get('date')
+        start_time = data.get('start_time')
+        end_time = (datetime.datetime.strptime(data.get('start_time'), "%H:%M") + datetime.timedelta(minutes=30)).strftime("%H:%M")
+
+        if add_booking(reserved_date=reserved_date, start_time=start_time,end_time=end_time,reserver_id="admin"):
+            return jsonify({'success': True, 'message': '予約が確定しました'}), 200
+        else:
+            return jsonify({'success': False, 'message': '予約に失敗しました'}), 400
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'success': False, 'message': '内部エラーが発生しました'}), 500
 
 # delete booking(for admin)
 @main.route('/admin/delete', methods=['POST'])
 def admin_delete_reservation():
     data = request.get_json()
     reserved_date = data.get('date')
-    reserved_time = data.get('time')
+    reserved_start_time = data.get('start_time')
 
-    if delete_booking(reserved_date, reserved_time):  # Use delete_booking function
+    if delete_booking(reserved_date,reserved_start_time):  # Use delete_booking function
         return jsonify({'success': True, 'message': '予約が削除されました'}), 200
 
 
