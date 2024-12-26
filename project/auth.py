@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 
 from . import db
 from .models import User
@@ -10,6 +10,10 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    # 新しくアカウント作った後にログインし直させるため
+    if current_user.is_authenticated:
+        logout_user()
+
     if request.method == 'POST':
         # check user info
         email = request.form.get('email')
@@ -28,12 +32,13 @@ def login():
 
         # passed
         login_user(user, remember=remember)
-        return redirect(url_for('main.admin'))
+        return redirect(url_for('main.admin_confirm'))
 
     return render_template('login.html')
 
 
 @auth.route('/signup',methods=['GET','POST'])
+@login_required
 def signup():
     if request.method == 'POST':
         # get val from DB and typed
@@ -56,7 +61,7 @@ def signup():
         db.session.commit()
 
         # Done, go to login page
-        return redirect(url_for('auth.login'))
+        flash("Created new user")
 
     return render_template('signup.html')
 
@@ -65,5 +70,4 @@ def signup():
 def logout():
     logout_user()
     return redirect(url_for("main.main_page"))
-
 

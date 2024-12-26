@@ -12,12 +12,22 @@ class User(UserMixin, db.Model):
 class Reservation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     reserved_date = db.Column(db.String, nullable=False)
-    reserved_time = db.Column(db.String, nullable=False)
+    start_time = db.Column(db.String, nullable=False)
+    end_time = db.Column(db.String, nullable=False)
+    reserver_id = db.Column(db.String, nullable=False)
 
 # create student table
 class StudentInfo(db.Model):
     student_id = db.Column(db.String(8), primary_key=True)
     hashed_id = db.Column(db.String(32),nullable=False)
+
+# create request table
+class Request(db.Model):
+    id = db.Column(db.Integer, primary_key=True,autoincrement=True)
+    reserved_date = db.Column(db.String, nullable=False)
+    start_time = db.Column(db.String, nullable=False)
+    end_time = db.Column(db.String, nullable=False)
+    student_id = db.Column(db.String(8), nullable=False)
 
 
 

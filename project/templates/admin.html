@@ -3,17 +3,17 @@
 {% block title %}予約管理{% endblock %}
 
 {% block content %}
-<h1 class="title has-text-centered" style="color: #333;">予約管理画面</h1>
+<h1 class="title has-text-centered">体育館予約管理システム</h1>
 <div class="box">
     <h2 class="subtitle" style="color: #333;">予約状況カレンダー</h2>
 
     <!-- ユーザー名を表示 -->
     <div class="user-info">
-        <p>こんにちは、{{ user_name }}さん！</p> <!-- ユーザー名を表示 -->
+        <p>こんにちは、{{ user_name }}さん！</p>
     </div>
 
-    <!-- 標準の日付入力 -->
-    <input type="date" id="calendar" class="input">
+    <!-- 日付選択カレンダー -->
+    <input type="date" id="calendar" class="input" onchange="fetchReservationsDetail()">
 
     <div id="reservation-status">
         <h3 class="subtitle">選択した日の予約状況</h3>
@@ -32,14 +32,15 @@
         padding: 0;
     }
     .reserved-time {
-        padding: 5px;
-        margin: 2px 0;
+        padding: 15px; /* 上下の余白を調整 */
+        margin: 5px 0; /* リスト間の間隔を広げる */
         display: flex;
         justify-content: space-between;
         align-items: center;
+        line-height: 1.8; /* 行間を広げる */
     }
     .reserved-time button {
-        margin-left: 10px;
+        margin: 5px 0; /* ボタンの上下に隙間を追加 */
     }
     .user-info p {
         font-size: 16px;
@@ -50,109 +51,140 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // カレンダーの初期化
-        var calendar = document.getElementById("calendar");
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendar = document.getElementById("calendar");
+        const reservationList = document.getElementById('reservation-times-list');
 
-        // カレンダーの日付変更時に予約状況を取得
-        calendar.addEventListener("change", function() {
-            var selectedDate = calendar.value;
-            fetchReservationStatus(selectedDate);
+        // 初期表示（最初にカレンダーから選ばれた日付で読み込む）
+        const selectedDate = calendar.value;
+        if (selectedDate) {
+            fetchReservationsDetail(selectedDate);
+        }
+
+        // カレンダーで日付を選択したときに予約状況を取得
+        calendar.addEventListener('change', function () {
+            fetchReservationsDetail(calendar.value);
         });
 
-        // 予約状況の取得
-        function fetchReservationStatus(date) {
-            // 選択された日付で予約状況を取得
-            fetch(`/api/get_reservations?date=${date}`)
-                .then(response => response.json())
-                .then(data => {
-                    updateReservationList(data, date);
+        // 予約状況を取得
+        function fetchReservationsDetail(date) {
+            if (!date) return; // 日付が選択されていない場合、何もせずに戻る
+
+            fetch(`/api/get_reservations_detail?date=${date}`, { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("サーバーエラーが発生しました");
+                    }
+                    return response.json();
                 })
+                .then(data => updateReservationList(data, date))
                 .catch(error => {
-                    console.error('予約状況の取得に失敗しました', error);
+                    console.error('エラー:', error);
+                    alert("予約情報の取得に失敗しました。");
                 });
         }
 
-        // 予約済み時間帯リストの更新
-        function updateReservationList(bookedTimes, date) {
-            var reservedTimesList = document.getElementById('reservation-times-list');
-            reservedTimesList.innerHTML = '';  // リストをクリア
+        // 予約状況をリストに表示
+        function updateReservationList(data, date) {
+            reservationList.innerHTML = ''; // リストをクリア
 
-            // 利用可能な時間帯のリスト
-            var availableTimes = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+            const availableTimes = [
+                '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+                '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+                '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+                '17:00', '17:30', '18:00', '18:30'
+            ];
 
-            availableTimes.forEach(function(time) {
-                var li = document.createElement('li');
+            // 予約された時間帯と予約者をマッピング
+            let reservations = {};
+
+            // APIからのデータ処理
+            for (let i = 0; i < data.length; i += 2) {
+                const times = data[i]; // 時間帯の配列
+                const reserver = data[i + 1]; // 予約者
+                times.forEach(time => {
+                    reservations[time] = reserver;
+                });
+            }
+            // follow last reserver
+            let lastReserver = null;
+
+            // 時間帯ごとの状態をリストに表示
+            availableTimes.forEach(time => {
+                const li = document.createElement('li');
                 li.classList.add('reserved-time');
-                var buttonHTML = `<button class="button is-link" onclick="reserve('${date}', '${time}')">予約する</button>`;
 
-                if (bookedTimes.includes(time)) {
-                    li.innerHTML = `${time} 予約済み <button class="button is-danger" onclick="deleteReservation('${date}', '${time}')">削除</button>`;
-                } else {
-                    li.innerHTML = `${time} 予約なし ${buttonHTML}`;
+                if(reservations[time]){
+                    // 予約されている時間帯
+                    //　予約者の表示を減らす adminは例外
+                    if(reservations[time]!== "admin") {
+                        if (reservations[time] !== lastReserver) {
+                            li.innerHTML = `${time} 予約済み 予約者： ${reservations[time]} <button class="button is-danger" onclick="deleteReservation('${date}', '${time}')">削除</button>`;
+                            // フラグ更新
+                            lastReserver = reservations[time];
+                        } else {
+                            li.innerHTML = `${time} 予約済み `;
+                        }
+                    }
+                    else{
+                        li.innerHTML = `${time} 予約済み 予約者： ${reservations[time]} <button class="button is-danger" onclick="deleteReservation('${date}', '${time}')">削除</button>`;
+                    }
                 }
-
-                reservedTimesList.appendChild(li);
+                else{
+                    // 予約されていない時間帯
+                    li.innerHTML = `${time} 予約なし <button class="button is-link" onclick="reserve('${date}', '${time}')">予約する</button>`;
+                }
+                reservationList.appendChild(li);
             });
         }
 
-        // 予約追加
-        window.reserve = function(date, time) {
-            // 確認ダイアログを表示
-            if (confirm(`${date} ${time} に予約を追加しますか？`)) {
-                // ユーザーが「はい」を選択した場合
-                fetch('/admin/reserve', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date: date, time: time })
+        // 予約処理
+        window.reserve = function (date, time) {
+            fetch('/admin/reserve', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ date, start_time: time })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("サーバーエラーが発生しました");
+                    }
+                    return response.json();
                 })
-                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        fetchReservationStatus(date); // 予約状況を更新
-                        alert(data.message); // 成功メッセージ
+                        alert(data.message);
+                        fetchReservationsDetail(date); // 予約後に再度予約状況を更新
                     } else {
-                        alert('予約に失敗しました');
+                        alert('予約に失敗しました。');
                     }
                 })
-                .catch(error => {
-                    alert('予約処理中にエラーが発生しました');
-                    console.error('予約エラー:', error);
-                });
-            } else {
-                // ユーザーが「いいえ」を選択した場合
-                alert('予約はキャンセルされました');
-            }
-        }
-        // 予約削除
-        window.deleteReservation = function(date, time) {
-            // 確認ダイアログを表示
-            if (confirm(`${date} ${time} の予約を削除しますか？`)) {
-                // ユーザーが「はい」を選択した場合
-                fetch('/admin/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ date: date, time: time })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        fetchReservationStatus(date); // 予約状況を更新
-                        alert(data.message); // 成功メッセージ
-                    } else {
-                        alert('削除に失敗しました');
-                    }
-                })
-                .catch(error => {
-                    alert('削除処理中にエラーが発生しました');
-                    console.error('削除エラー:', error);
-                });
-            } else {
-                // ユーザーが「いいえ」を選択した場合
-                alert('削除はキャンセルされました');
-            }
-        }
+                .catch(error => console.error('エラー:', error));
+        };
 
+        // 予約削除
+        window.deleteReservation = function (date, time) {
+            fetch('/admin/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, start_time: time })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("サーバーエラーが発生しました");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        fetchReservationsDetail(date); // 削除後に再度予約状況を更新
+                    } else {
+                        alert('削除に失敗しました。');
+                    }
+                })
+                .catch(error => console.error('エラー:', error));
+        };
     });
 </script>
 {% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}予約リクエスト管理{% endblock %}
+
+{% block content %}
+<h1 class="title has-text-centered">予約リクエスト管理</h1>
+    <!-- Flash メッセージの表示 -->
+{% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification is-danger">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+<div style="max-height: 400px; overflow-y: auto;">
+    <table class="table is-bordered is-striped is-fullwidth">
+        <thead style="position: sticky; top: 0; background-color: white;">
+            <tr>
+                <th>学籍番号</th>
+                <th>予約日付</th>
+                <th>予約時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if requests %}
+                {% for request in requests %}
+                <tr>
+                    <td>{{ request.student_id }}</td>
+                    <td>{{ request.reserved_date }}</td>
+                    <td>{{ request.start_time }} - {{ request.end_time }}</td>
+                    <td>
+                        <form action="{{ url_for('main.student_approve_reservation') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <button type="submit" class="button is-success">承認</button>
+                        </form>
+
+                        <form action="{{ url_for('main.student_reject_reservation') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <button type="submit" class="button is-danger">拒否</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" class="has-text-centered">現在、予約リクエストはありません。</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
