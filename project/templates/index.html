@@ -23,45 +23,40 @@
             <input class="input" type="text" id="student_id" name="student_id" placeholder="学籍番号を入力してください" required>
         </div>
 
-        <!-- 予約日 -->
+        <!-- 日付 -->
         <div class="field">
             <label class="label" for="date">予約したい日付：</label>
             <input class="input" type="date" id="date" name="date" value="{{ reserved_date }}"
-                   min="{{ start_of_week }}" max="{{ end_of_week }}">
+                   min="{{ start_of_week }}" max="{{ end_of_week }}" required>
         </div>
 
-        <!-- 開始時間 -->
-        <div class="field">
-            <label class="label" for="start_time">開始時間：</label>
-            <div class="control">
-                <div class="select">
-                    <select id="start_time" name="start_time" required>
-                        {% for time in available_times %}
-                            {% if time in booked_times %}
-                                <option value="{{ time }}" disabled>{{ time }}（予約済み）</option>
-                            {% else %}
+        <!-- 開始時間と終了時間を横に並べる -->
+        <div class="field-container" style="display: flex; gap: 20px;">
+            <!-- 開始時間 -->
+            <div class="field">
+                <label class="label" for="start_time">開始時間：</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="start_time" name="start_time" required>
+                            {% for time in available_times %}
                                 <option value="{{ time }}">{{ time }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 終了時間 -->
-        <div class="field">
-            <label class="label" for="end_time">終了時間：</label>
-            <div class="control">
-                <div class="select">
-                    <select id="end_time" name="end_time" required>
-                        {% for time in available_times %}
-                            {% if time in booked_times %}
-                                <option value="{{ time }}" disabled>{{ time }}（予約済み）</option>
-                            {% else %}
+            <!-- 終了時間 -->
+            <div class="field">
+                <label class="label" for="end_time">終了時間：</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="end_time" name="end_time" required>
+                            {% for time in available_times %}
                                 <option value="{{ time }}">{{ time }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -71,11 +66,6 @@
             <button class="button is-link" type="submit">予約する</button>
         </div>
     </form>
-
-    <div id="popup" class="popup">
-        <p>選択された時間帯は既に予約されています。別の時間帯を選択してください。</p>
-    </div>
-
     <br>
     <h2 class="subtitle" style="color: #333;">予約可能時間帯</h2>
     <ul class="time-list">
@@ -116,21 +106,47 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var startTimeInput = document.getElementById('start_time');
-        var endTimeInput = document.getElementById('end_time');
-        var popup = document.getElementById('popup');
+    var dateInput = document.getElementById('date');
+    var startTimeSelect = document.getElementById('start_time');
+    var endTimeSelect = document.getElementById('end_time');
 
-        // 終了時間が開始時間より前にならないように確認
-        endTimeInput.addEventListener('change', function() {
-            var startTime = startTimeInput.value;
-            var endTime = endTimeInput.value;
+    updateBookedTimes();
 
-            if (startTime && endTime && endTime <= startTime) {
-                popup.style.display = 'block';
-            } else {
-                popup.style.display = 'none';
-            }
-        });
+    dateInput.addEventListener('change', function() {
+        updateBookedTimes();
+    });
+
+    function updateBookedTimes() {
+            var selectedDate = dateInput.value;
+            fetch(`/api/get_reservations?date=${selectedDate}`)
+            .then(response => response.json())
+            .then(data => {
+                var bookedTimes = data; // 予約済みの時間帯を受け取る
+
+                // 開始時間の選択肢を無効化
+                Array.from(startTimeSelect.options).forEach(option => {
+                    option.disabled = false; // 最初に全てを有効にする
+                });
+                bookedTimes.forEach(bookedTime => {
+                    var option = startTimeSelect.querySelector(`option[value="${bookedTime}"]`);
+                    if (option) {
+                        option.disabled = true; // 予約済み時間帯を無効化
+                    }
+                });
+
+                // 終了時間の選択肢を無効化
+                Array.from(endTimeSelect.options).forEach(option => {
+                    option.disabled = false; // 最初に全てを有効にする
+                });
+                bookedTimes.forEach(bookedTime => {
+                    var option = endTimeSelect.querySelector(`option[value="${bookedTime}"]`);
+                    if (option) {
+                        option.disabled = true; // 予約済み時間帯を無効化
+                    }
+                });
+            })
+            .catch(error => console.error('エラー:', error));
+        }
     });
 </script>
 {% endblock %}
