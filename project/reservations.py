@@ -146,8 +146,8 @@ def delete_request_booking(request_id,condition):
 def get_reservation_week():
     # get date
     today = datetime.now()
-    start_date = today - timedelta(days=today.weekday())
-    end_date = start_date + timedelta(days=6)
+    start_date = today
+    end_date = start_date + timedelta(days=7)
 
     return start_date.date(), end_date.date()
 

@@ -8,7 +8,7 @@
 <!-- Flash メッセージの表示 -->
 {% with messages = get_flashed_messages() %}
     {% if messages %}
-        <div class="notification is-danger">
+        <div class="notification is-info">
             {{ messages[0] }}
         </div>
     {% endif %}
@@ -30,14 +30,14 @@
                    min="{{ start_of_week }}" max="{{ end_of_week }}" required>
         </div>
 
-        <!-- 開始時間と終了時間を横に並べる -->
+        <!-- 開始時間と終了時間 -->
         <div class="field-container" style="display: flex; gap: 20px;">
-            <!-- 開始時間 -->
             <div class="field">
                 <label class="label" for="start_time">開始時間：</label>
                 <div class="control">
                     <div class="select">
                         <select id="start_time" name="start_time" required>
+                            <option value="" disabled selected>選択してください</option>
                             {% for time in available_times %}
                                 <option value="{{ time }}">{{ time }}</option>
                             {% endfor %}
@@ -45,13 +45,12 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 終了時間 -->
             <div class="field">
                 <label class="label" for="end_time">終了時間：</label>
                 <div class="control">
                     <div class="select">
                         <select id="end_time" name="end_time" required>
+                            <option value="" disabled selected>選択してください</option>
                             {% for time in available_times %}
                                 <option value="{{ time }}">{{ time }}</option>
                             {% endfor %}
@@ -105,47 +104,42 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    var dateInput = document.getElementById('date');
-    var startTimeSelect = document.getElementById('start_time');
-    var endTimeSelect = document.getElementById('end_time');
+    document.addEventListener('DOMContentLoaded', function () {
+        var dateInput = document.getElementById('date');
+        var startTimeSelect = document.getElementById('start_time');
+        var endTimeSelect = document.getElementById('end_time');
 
-    updateBookedTimes();
-
-    dateInput.addEventListener('change', function() {
+        // 初期化時に予約済み時間を反映
         updateBookedTimes();
-    });
 
-    function updateBookedTimes() {
-            var selectedDate = dateInput.value;
+        // 日付変更時に予約済み時間を更新
+        dateInput.addEventListener('change', function () {
+            updateBookedTimes();
+        });
+
+        function updateBookedTimes() {
+            var selectedDate = dateInput.value || dateInput.getAttribute('value'); // 初期値も取得
+            if (!selectedDate) return;
+
             fetch(`/api/get_reservations?date=${selectedDate}`)
-            .then(response => response.json())
-            .then(data => {
-                var bookedTimes = data; // 予約済みの時間帯を受け取る
+                .then(response => response.json())
+                .then(bookedTimes => {
+                    updateSelectOptions(startTimeSelect, bookedTimes);
+                    updateSelectOptions(endTimeSelect, bookedTimes);
+                })
+                .catch(error => console.error('エラー:', error));
+        }
 
-                // 開始時間の選択肢を無効化
-                Array.from(startTimeSelect.options).forEach(option => {
-                    option.disabled = false; // 最初に全てを有効にする
-                });
-                bookedTimes.forEach(bookedTime => {
-                    var option = startTimeSelect.querySelector(`option[value="${bookedTime}"]`);
-                    if (option) {
-                        option.disabled = true; // 予約済み時間帯を無効化
-                    }
-                });
+        function updateSelectOptions(selectElement, bookedTimes) {
+            // 選択肢を初期化
+            Array.from(selectElement.options).forEach(option => {
+                if (option.value) { // 空の選択肢は無効化しない
+                    option.disabled = bookedTimes.includes(option.value);
+                }
+            });
 
-                // 終了時間の選択肢を無効化
-                Array.from(endTimeSelect.options).forEach(option => {
-                    option.disabled = false; // 最初に全てを有効にする
-                });
-                bookedTimes.forEach(bookedTime => {
-                    var option = endTimeSelect.querySelector(`option[value="${bookedTime}"]`);
-                    if (option) {
-                        option.disabled = true; // 予約済み時間帯を無効化
-                    }
-                });
-            })
-            .catch(error => console.error('エラー:', error));
+            // 最初の有効な選択肢を選ばせない
+            selectElement.selectedIndex = 0;
         }
     });
 </script>
