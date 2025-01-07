@@ -15,8 +15,8 @@ AVAILABLE_TIMES = [
     for hour in range(8, 19)  # Change to 19 to include 18:00
     for minute in (0, 30)
 ]
-# send address (for test use 127.--- on performance use 'cercil.net')
-SEND_ADDRESS = "cercil.net"
+# send address (for test use 127.---)
+SEND_ADDRESS = "127.0.0.1"
 
 @main.route('/')
 def main_page(): # show main page(for reserve)

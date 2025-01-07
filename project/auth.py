@@ -38,6 +38,7 @@ def login():
 
 
 @auth.route('/signup',methods=['GET','POST'])
+# debug mode if you use in performance use login_required
 @login_required
 def signup():
     if request.method == 'POST':

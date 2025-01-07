@@ -82,8 +82,8 @@ def delete_booking(reserved_date, start_time):
             if reservation.reserver_id != "admin":
                 send_email(
                     to=reservation.reserver_id + UNIV_ADDRESS,  # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
-                    subject="体育館予約の削除について",
-                    body="""確定していた、{} {} - {}の予約が管理者によって削除されました。""".format(reservation.reserved_date,
+                    subject="体育館予約申請の削除について",
+                    body="""{} {} - {}の予約が管理者によって削除されました。""".format(reservation.reserved_date,
                                                                                       reservation.start_time,
                                                                                       reservation.end_time)
                 )
@@ -146,8 +146,8 @@ def delete_request_booking(request_id,condition):
 def get_reservation_week():
     # get date
     today = datetime.now()
-    start_date = today - timedelta(days=today.weekday())
-    end_date = start_date + timedelta(days=6)
+    start_date = today
+    end_date = start_date + timedelta(days=7)
 
     return start_date.date(), end_date.date()
 
