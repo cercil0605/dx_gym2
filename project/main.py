@@ -62,7 +62,7 @@ def reserve(): # process reservations
     # send reserve mail
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
-        subject="体育館予約の確認",
+        subject="体育館予約申請の確認",
         body="""{} {} - {} の予約申請を完了させるために、<a href="{}/confirm/{}/{}+{}-{}">こちら</a>をクリックしてください。"""
         .format(
             reserved_date,
@@ -83,7 +83,7 @@ def reserve(): # process reservations
 @main.route('/confirm/<string:hash_id>/<string:reserved_date>+<string:start_time>-<string:end_time>')
 def confirm(hash_id,reserved_date,start_time,end_time):
     reserve_student = StudentInfo.query.filter_by(hashed_id=hash_id).first()
-    # print(reserve_student.student_id)
+
     if reserve_student:
         if add_request_booking(reserved_date=reserved_date,start_time=start_time,end_time=end_time,student_id=reserve_student.student_id):# first access, add date,time,student_id
             return "予約申請が完了しました。この画面は閉じて構いません。"
@@ -132,7 +132,7 @@ def student_reject_reservation():
 @main.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html',user_name=current_user.name)
+    return render_template('admin.html',user_name=current_user.name,available_times=AVAILABLE_TIMES)
 
 # add booking (for admin)
 @main.route('/admin/reserve', methods=['POST'])
