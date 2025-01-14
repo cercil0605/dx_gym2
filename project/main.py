@@ -16,7 +16,7 @@ AVAILABLE_TIMES = [
     for minute in (0, 30)
 ]
 # send address (for test use 127.---)
-SEND_ADDRESS = "127.0.0.1"
+SEND_ADDRESS = "cercil.net"
 
 @main.route('/')
 def main_page(): # show main page(for reserve)
@@ -57,6 +57,9 @@ def reserve(): # process reservations
     student_id = request.form['student_id']
     # judge start_time and end_time are correct or not
     if not check_reservation_time(start_time, end_time, reserved_date):
+        return redirect(url_for('main.main_page'))
+    # judge student id
+    if not judge_student_id(student_id):
         return redirect(url_for('main.main_page'))
 
     # send reserve mail

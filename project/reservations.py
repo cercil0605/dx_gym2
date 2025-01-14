@@ -153,7 +153,11 @@ def get_reservation_week():
 
 # judge studentID
 def judge_student_id(student_id):
-    return bool(STUDENT_ID_PATTERN.match(student_id))
+    if STUDENT_ID_PATTERN.match(student_id) is not True:
+        flash("開始時間が終了時間より遅いです。もう一度やり直してください")
+        return False
+    
+    return True
 
 # check duplicate in database(same data)
 def check_duplicate(table_class: Type[Model], **filters) -> bool:
