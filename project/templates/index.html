@@ -26,8 +26,8 @@
         <!-- 日付 -->
         <div class="field">
             <label class="label" for="date">予約したい日付：</label>
-            <input class="input" type="date" id="date" name="date" value="{{ reserved_date }}"
-                   min="{{ start_of_week }}" max="{{ end_of_week }}" required>
+            <input class="input" type="date" id="calendar" name="date" value="{{ reserved_date }}"
+                   min="{{ start_of_week }}" max="{{ end_of_week }}" onchange="fetchAndRenderReservations()" required>
         </div>
 
         <!-- 開始時間と終了時間 -->
@@ -38,9 +38,6 @@
                     <div class="select">
                         <select id="start_time" name="start_time" required>
                             <option value="" disabled selected>選択してください</option>
-                            {% for time in available_times %}
-                                <option value="{{ time }}">{{ time }}</option>
-                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -51,9 +48,6 @@
                     <div class="select">
                         <select id="end_time" name="end_time" required>
                             <option value="" disabled selected>選択してください</option>
-                            {% for time in available_times %}
-                                <option value="{{ time }}">{{ time }}</option>
-                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -67,16 +61,7 @@
     </form>
     <br>
     <h2 class="subtitle" style="color: #333;">予約可能時間帯</h2>
-    <ul class="time-list">
-        {% for time in available_times %}
-        <li class="time-item">
-            <span>{{ time }}</span>
-            {% if time in booked_times %}
-            <span class="tag is-danger">予約済み</span>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
+    <ul id="time-list"></ul>
 </div>
 {% endblock %}
 
@@ -99,48 +84,108 @@
     .time-item .tag {
         font-size: 0.85em;
     }
+    .reserved-time {
+        padding: 15px; /* 上下の余白を調整 */
+        margin: 5px 0; /* リスト間の間隔を広げる */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        line-height: 1.8; /* 行間を広げる */
+    }
+    .reserved-time button {
+        margin: 5px 0; /* ボタンの上下に隙間を追加 */
+    }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var dateInput = document.getElementById('date');
-        var startTimeSelect = document.getElementById('start_time');
-        var endTimeSelect = document.getElementById('end_time');
+   document.addEventListener('DOMContentLoaded', function () {
+    const calendar = document.getElementById("calendar");
+    const startTimeSelect = document.getElementById("start_time");
+    const endTimeSelect = document.getElementById("end_time");
+    const reservationList = document.getElementById("time-list")
 
-        // 初期化時に予約済み時間を反映
-        updateBookedTimes();
+    // 初期表示（最初にカレンダーから選ばれた日付で読み込む）
+    const selectedDate = calendar.value;
+    if (selectedDate) {
+        fetchAndRenderReservations(selectedDate);
+    }
 
-        // 日付変更時に予約済み時間を更新
-        dateInput.addEventListener('change', function () {
-            updateBookedTimes();
-        });
+    // カレンダー変更時のイベント
+    calendar.addEventListener('change', () => fetchAndRenderReservations(calendar.value));
 
-        function updateBookedTimes() {
-            var selectedDate = dateInput.value || dateInput.getAttribute('value'); // 初期値も取得
-            if (!selectedDate) return;
+    function fetchAndRenderReservations(date) {
+        if (!date) return;
 
-            fetch(`/api/get_reservations?date=${selectedDate}`)
-                .then(response => response.json())
-                .then(bookedTimes => {
-                    updateSelectOptions(startTimeSelect, bookedTimes);
-                    updateSelectOptions(endTimeSelect, bookedTimes);
-                })
-                .catch(error => console.error('エラー:', error));
-        }
-
-        function updateSelectOptions(selectElement, bookedTimes) {
-            // 選択肢を初期化
-            Array.from(selectElement.options).forEach(option => {
-                if (option.value) { // 空の選択肢は無効化しない
-                    option.disabled = bookedTimes.includes(option.value);
+        fetch(`/api/get_reservations?date=${date}`, { method: 'GET' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("サーバーエラーが発生しました");
                 }
+                return response.json();
+            })
+            .then(bookedTimes => {
+                renderReservationList(bookedTimes);
+                renderReservationSelects(bookedTimes);
+            })
+            .catch(error => {
+                console.error('エラー:', error);
+                alert("予約情報の取得に失敗しました。");
             });
+    }
 
-            // 最初の有効な選択肢を選ばせない
-            selectElement.selectedIndex = 0;
-        }
-    });
+    function renderReservationList(bookedTimes){
+        reservationList.innerHTML='';
+
+        const availableTimes = {{ available_times|tojson }};
+
+        availableTimes.forEach(time =>{
+            const li = document.createElement('li');
+            li.classList.add('reserved-time');
+
+            if(bookedTimes.includes(time)){
+                li.innerHTML = `${time} <span class="tag is-danger">予約済み</span> `;
+            }
+            else{
+                li.innerHTML = `${time} `;
+            }
+            reservationList.appendChild(li);
+        });
+    }
+
+    function renderReservationSelects(bookedTimes) {
+        // 開始時間と終了時間のセレクトボックスをクリア
+        const availableTimes = {{ available_times|tojson }};
+        startTimeSelect.innerHTML = '<option value="" disabled selected>選択してください</option>';
+        endTimeSelect.innerHTML = '<option value="" disabled selected>選択してください</option>';
+
+        // すべての時間帯を表示（予約済みの時間帯は選択できない）
+        availableTimes.forEach(time => {
+            const startOption = document.createElement("option");
+            startOption.value = time;
+            startOption.textContent = time;
+            // 予約されていない場合は選択可能
+            if (!bookedTimes.includes(time)) {
+                startOption.disabled = false;
+            } else {
+                startOption.disabled = true;
+            }
+            startTimeSelect.appendChild(startOption);
+
+            // 終了時間にも同じ時間帯を追加（予約済みの時間帯はdisabled）
+            const endOption = document.createElement("option");
+            endOption.value = time;
+            endOption.textContent = time;
+            if (!bookedTimes.includes(time)) {
+                endOption.disabled = false;
+            } else {
+                endOption.disabled = true;
+            }
+            endTimeSelect.appendChild(endOption);
+        });
+    }
+});
+
 </script>
 {% endblock %}
