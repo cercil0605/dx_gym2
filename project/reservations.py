@@ -183,11 +183,12 @@ def generate_time_intervals(start: str, end: str):
 
     time_list = []
     current_time = start_time
-
+    # if admin use this bug maybe when 「<=」
     while current_time < end_time:  # exclude end_time
         time_list.append(current_time.strftime("%H:%M"))
         current_time += timedelta(minutes=30)  # add 30min
 
+    print(time_list)
     return time_list
 # check duplication of reservation time
 def check_reservation_time(start_time: str, end_time: str,date):
