@@ -22,7 +22,6 @@ def login():
 
         # find info of user
         user = User.query.filter_by(email=email).first()
-
         if not user : # no user found
             flash("Please check your login details and try again.(User not found)")
             return redirect(url_for('auth.login'))  # redirect
@@ -39,7 +38,7 @@ def login():
 
 @auth.route('/signup',methods=['GET','POST'])
 # debug mode if you use in performance use login_required
-@login_required
+# @login_required
 def signup():
     if request.method == 'POST':
         # get val from DB and typed

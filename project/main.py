@@ -16,7 +16,7 @@ AVAILABLE_TIMES = [
     for minute in (0, 30)
 ]
 # send address (for test use 127.---)
-SEND_ADDRESS = "cercil.net"
+SEND_ADDRESS = "127.0.0.1"
 
 @main.route('/')
 def main_page(): # show main page(for reserve)
@@ -44,7 +44,7 @@ def get_reserved_times(): # get reservations info
 def get_reservations_detail():
     date = request.args.get('date')
     reserved_data = get_booked_times_details(date)
-    # print(reserved_data)
+    print(reserved_data)
     return jsonify(reserved_data)
 
 
@@ -58,14 +58,11 @@ def reserve(): # process reservations
     # judge start_time and end_time are correct or not
     if not check_reservation_time(start_time, end_time, reserved_date):
         return redirect(url_for('main.main_page'))
-    # judge student id
-    if not judge_student_id(student_id):
-        return redirect(url_for('main.main_page'))
 
     # send reserve mail
     sendmail.send_email(
         to=student_id+sendmail.UNIV_ADDRESS, # student_id@(univ address) ex. 00t0000a@shinshu-u.ac.jp
-        subject="体育館予約の確認",
+        subject="体育館予約申請の確認",
         body="""{} {} - {} の予約申請を完了させるために、<a href="{}/confirm/{}/{}+{}-{}">こちら</a>をクリックしてください。"""
         .format(
             reserved_date,
@@ -86,7 +83,7 @@ def reserve(): # process reservations
 @main.route('/confirm/<string:hash_id>/<string:reserved_date>+<string:start_time>-<string:end_time>')
 def confirm(hash_id,reserved_date,start_time,end_time):
     reserve_student = StudentInfo.query.filter_by(hashed_id=hash_id).first()
-    # print(reserve_student.student_id)
+
     if reserve_student:
         if add_request_booking(reserved_date=reserved_date,start_time=start_time,end_time=end_time,student_id=reserve_student.student_id):# first access, add date,time,student_id
             return "予約申請が完了しました。この画面は閉じて構いません。"
@@ -135,7 +132,7 @@ def student_reject_reservation():
 @main.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html',user_name=current_user.name)
+    return render_template('admin.html',user_name=current_user.name,available_times=AVAILABLE_TIMES)
 
 # add booking (for admin)
 @main.route('/admin/reserve', methods=['POST'])
