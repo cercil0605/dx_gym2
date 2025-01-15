@@ -44,7 +44,7 @@ def get_reserved_times(): # get reservations info
 def get_reservations_detail():
     date = request.args.get('date')
     reserved_data = get_booked_times_details(date)
-    # print(reserved_data)
+    print(reserved_data)
     return jsonify(reserved_data)
 
 

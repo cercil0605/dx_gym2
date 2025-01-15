@@ -23,8 +23,10 @@ def get_booked_times(reserved_date):
     # push booked time in booked_times
     booked_times = []
     for r in reserve:
-        booked_times.extend(generate_time_intervals(r.start_time, r.end_time))
-
+        if r.reserver_id == "admin":
+            booked_times.extend(generate_time_admin(r.start_time))
+        else:
+            booked_times.extend(generate_time_intervals(r.start_time, r.end_time))
     return booked_times
 
 # get reserved_time for admin
@@ -32,7 +34,10 @@ def get_booked_times_details(reserved_date):
     reserve = Reservation.query.filter_by(reserved_date=reserved_date).all()
     booked_times = []
     for r in reserve: # insert like [ [10:00,10:30,11:00,11:30], 21t***** ]
-        booked_times.append(generate_time_intervals(r.start_time, r.end_time))
+        if r.reserver_id == "admin" :
+            booked_times.append(generate_time_admin(r.start_time))
+        else:
+            booked_times.append(generate_time_intervals(r.start_time, r.end_time))
         booked_times.append(r.reserver_id)
 
     return booked_times
@@ -180,11 +185,15 @@ def generate_time_intervals(start: str, end: str):
     time_list = []
     current_time = start_time
 
-    while current_time < end_time:  # exclude end_time
+    while current_time <= end_time:  # exclude end_time
         time_list.append(current_time.strftime("%H:%M"))
         current_time += timedelta(minutes=30)  # add 30min
 
     return time_list
+# generate admin reserve time list
+def generate_time_admin(start: str):
+    start_time = datetime.strptime(start, "%H:%M")
+    return [start_time.strftime("%H:%M")]
 # check duplication of reservation time
 def check_reservation_time(start_time: str, end_time: str,date):
     start_time = datetime.strptime(start_time, "%H:%M")
