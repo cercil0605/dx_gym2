@@ -47,8 +47,10 @@ def add_booking(reserved_date,start_time,end_time,reserver_id):
 
     # block double booking
     if check_duplicate(Reservation,reserved_date=reserved_date,start_time=start_time,end_time=end_time,reserver_id=reserver_id):
+        print("Reservation already booked")
         return False
-    if check_duplicate_detail(reserved_date=reserved_date,start_time=start_time,end_time=end_time):
+    if check_duplicate_detail(reserved_date=reserved_date,start_time=start_time,end_time=end_time,reserver_id=reserver_id):
+        print("Reservation detail check failed")
         return False
     # prepare reservation data  *****Reservation table needs date,time,reserver_id(ex student_id or admin)*****
     new_reservation = Reservation(
@@ -165,12 +167,14 @@ def check_duplicate(table_class: Type[Model], **filters) -> bool:
     duplicate = table_class.query.filter_by(**filters).first()
     return duplicate is not None # if it exists return True
 
-def check_duplicate_detail(reserved_date,start_time,end_time):
-    new_reservation = generate_time_intervals(start_time,end_time)
-    existed_reservation = get_booked_times(reserved_date)
+def check_duplicate_detail(reserved_date,start_time,end_time,reserver_id):
 
-    print("new_reservation", new_reservation)
-    print("existed_reservation", existed_reservation)
+    if reserver_id == "admin":
+        new_reservation = generate_time_admin(start_time)
+    else:
+        new_reservation = generate_time_intervals(start_time,end_time)
+
+    existed_reservation = get_booked_times(reserved_date)
 
     for elements in new_reservation:
         if elements in existed_reservation:
