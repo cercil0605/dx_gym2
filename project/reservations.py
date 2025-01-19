@@ -27,6 +27,7 @@ def get_booked_times(reserved_date):
             booked_times.extend(generate_time_admin(r.start_time))
         else:
             booked_times.extend(generate_time_intervals(r.start_time, r.end_time))
+
     return booked_times
 
 # get reserved_time for admin
@@ -152,7 +153,7 @@ def delete_request_booking(request_id,condition):
 # get available reservation day(start~end)
 def get_reservation_week():
     # get date
-    today = datetime.now()
+    today = datetime.now() 
     start_date = today
     end_date = start_date + timedelta(days=7)
 
