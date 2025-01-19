@@ -16,8 +16,8 @@ AVAILABLE_TIMES = [
     for minute in (0, 30)
 ]
 # send address (for test use 127.---)
-SEND_ADDRESS = "127.0.0.1"
-
+# SEND_ADDRESS = "127.0.0.1"
+SEND_ADDRESS = "cercil.net"
 @main.route('/')
 def main_page(): # show main page(for reserve)
     start_date, end_date = reservations.get_reservation_week() # get available day
