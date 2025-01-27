@@ -190,7 +190,7 @@ def generate_time_intervals(start: str, end: str):
     time_list = []
     current_time = start_time
 
-    while current_time <= end_time:  # exclude end_time
+    while current_time < end_time:  # exclude end_time
         time_list.append(current_time.strftime("%H:%M"))
         current_time += timedelta(minutes=30)  # add 30min
 
