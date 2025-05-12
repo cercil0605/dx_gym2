@@ -30,4 +30,4 @@ mainブランチではノートPC上での開発したものを上げてあり�
 
 
 # Sample
-実際に[こちら](https://cercil.net)にて公開しております。
+実際に[こちら](https://reserve.cercil.net)にて公開しております。
