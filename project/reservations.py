@@ -27,7 +27,6 @@ def get_booked_times(reserved_date):
             booked_times.extend(generate_time_admin(r.start_time))
         else:
             booked_times.extend(generate_time_intervals(r.start_time, r.end_time))
-
     return booked_times
 
 # get reserved_time for admin
