@@ -1,4 +1,6 @@
-/instance/db.sqlite
+/instance
+/mail_authfile
+/__pycache__
 *.pyc
 *.json
 *.log
